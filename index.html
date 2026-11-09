@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Справочник форм автомобилей</title>
+<style>
+/* ===== Сброс и переменные ===== */
+* { box-sizing: border-box; }
+
+:root {
+  --bg: #f5f7fb; --card: #fff; --ink: #1b2130; --muted: #667085;
+  --line: #e5e9f0; --accent: #2f5bea; --accent-soft: #e8eeff;
+  --danger: #d92d20; --danger-soft: #fdecea;
+  --ok: #12b76a; --radius: 14px;
+  --shadow: 0 6px 24px rgba(20,30,60,.06);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  margin: 0; font-family: var(--font); background: var(--bg); color: var(--ink);
+  line-height: 1.6; -webkit-font-smoothing: antialiased;
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+#app { flex: 1; padding-top: 28px; padding-bottom: 48px; }
+
+.container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+/* ===== Шапка ===== */
+.site-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.header-inner { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; color: var(--ink); text-decoration: none; }
+.site-header nav { display: flex; gap: 6px; }
+.site-header nav a { padding: 8px 14px; border-radius: 10px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14.5px; transition: .15s; }
+.site-header nav a:hover,
+.site-header nav a.active { color: var(--accent); background: var(--accent-soft); }
+
+/* ===== Подвал ===== */
+.site-footer { border-top: 1px solid var(--line); background: #fff; padding: 18px 0; color: var(--muted); font-size: 13.5px; }
+.site-footer p { margin: 0; }
+
+/* ===== Заголовки страниц ===== */
+.page-head { margin-bottom: 22px; }
+.page-head h1 { margin: 0 0 6px; font-size: 28px; }
+.page-head p { margin: 0; color: var(--muted); }
+
+/* ===== Тулбар поиска/фильтра ===== */
+.toolbar { display: flex; gap: 12px; margin-bottom: 22px; }
+.toolbar input, .toolbar select, .field input, .field textarea, .field select {
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px;
+  font: inherit; font-size: 14.5px; background: #fff; color: var(--ink); outline: none;
+}
+.toolbar input { flex: 1; }
+.toolbar input:focus, .toolbar select:focus,
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+
+/* ===== Кнопки и теги ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 16px; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+  text-decoration: none; cursor: pointer; border: 1px solid var(--line);
+  background: #fff; color: var(--ink); transition: .15s; font-family: inherit;
+}
+.btn:hover { border-color: #cfd6e4; background: #fafbff; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: #2448c8; }
+.btn.danger { color: var(--danger); border-color: #f3c3be; }
+.btn.sm { padding: 6px 11px; font-size: 13px; border-radius: 8px; }
+
+.tag {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  padding: 3px 9px; border-radius: 7px;
+  background: var(--accent-soft); color: var(--accent);
+  text-transform: uppercase; letter-spacing: .3px;
+}
+
+/* ===== Сетка карточек ===== */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+.card {
+  display: flex; flex-direction: column; background: var(--card);
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+  text-decoration: none; color: inherit; transition: .2s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(20,30,60,.1); }
+.card-img { aspect-ratio: 16/10; background: #eef1f8; overflow: hidden; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.card-body h3 { margin: 0; font-size: 18px; }
+.card-body p { margin: 0; color: var(--muted); font-size: 14px; flex: 1; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+.card-foot .more { color: var(--accent); font-weight: 600; }
+
+/* ===== Пагинация ===== */
+.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 26px; }
+.pg {
+  min-width: 38px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600;
+}
+.pg:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pg.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg:disabled { opacity: .4; cursor: default; }
+.pg-dots { align-self: center; color: var(--muted); }
+
+/* ===== Заглушки и пустые состояния ===== */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty h2 { color: var(--ink); margin: 0 0 6px; }
+
+/* ===== Страница просмотра ===== */
+.back-link { display: inline-block; margin-bottom: 16px; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+.back-link:hover { color: var(--accent); }
+.form-view-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; align-items: start; }
+.main-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); background: #eef1f8; }
+.thumbs { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.thumb { padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer; background: none; width: 90px; height: 60px; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb.active { border-color: var(--accent); }
+.form-info h1 { margin: 10px 0 8px; font-size: 26px; }
+.lead { color: var(--muted); font-size: 15.5px; margin: 0 0 14px; }
+.form-stats { display: flex; gap: 18px; color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+.desc { white-space: pre-line; border-top: 1px solid var(--line); padding-top: 16px; }
+
+/* ===== Авторизация ===== */
+.auth-wrap { display: flex; justify-content: center; padding-top: 40px; }
+.auth-card {
+  width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.auth-card h2 { margin: 0; }
+.hint { margin: 0; color: var(--muted); font-size: 13.5px; }
+.err { color: var(--danger); font-size: 13.5px; min-height: 18px; margin: 0; }
+
+/* ===== Админка ===== */
+.admin-layout { display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: start; }
+.admin-nav { position: sticky; top: 86px; display: flex; flex-direction: column; gap: 4px; }
+.admin-nav a { padding: 10px 14px; border-radius: 10px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14.5px; }
+.admin-nav a:hover { background: var(--accent-soft); color: var(--accent); }
+.admin-nav a.active { background: var(--accent-soft); color: var(--accent); }
+.admin-nav a.logout { color: var(--danger); margin-top: 10px; }
+.admin-nav a.logout:hover { background: var(--danger-soft); }
+.admin-content h1 { margin: 0 0 18px; font-size: 24px; }
+.admin-content h2 { margin: 26px 0 12px; font-size: 18px; }
+
+/* Статистика */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.stat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.stat-card .k { color: var(--muted); font-size: 13.5px; }
+.stat-card .v { font-size: 26px; font-weight: 800; margin-top: 4px; }
+
+/* Таблицы */
+.table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: .4px; }
+tbody tr:last-child td { border-bottom: none; }
+
+/* Формы */
+.form-grid { display: flex; flex-direction: column; gap: 16px; max-width: 640px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-weight: 600; font-size: 14px; }
+.form-actions { display: flex; gap: 10px; }
+.form-actions .btn { align-self: flex-start; }
+
+/* Превью картинок */
+.previews { display: flex; gap: 10px; flex-wrap: wrap; }
+.img-prev { position: relative; width: 110px; height: 74px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.img-prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-prev .x {
+  position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+  border: none; border-radius: 6px; background: rgba(0,0,0,.55); color: #fff;
+  cursor: pointer; font-size: 14px; line-height: 1;
+}
+.img-prev .x:hover { background: var(--danger); }
+.main-preview { max-width: 240px; }
+.main-preview .img-prev { width: 240px; height: 150px; }
+
+/* Список категорий */
+.cat-list { display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
+.cat-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.cat-row .name { font-weight: 600; }
+.cat-actions { display: flex; gap: 6px; }
+
+/* ===== Тосты ===== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px);
+  background: #1b2130; color: #fff; padding: 12px 18px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none;
+  transition: .3s; z-index: 1000; max-width: 90vw;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.success { background: var(--ok); }
+.toast.error { background: var(--danger); }
+.toast.info { background: #1b2130; }
+
+/* ===== Адаптив ===== */
+@media (max-width: 900px) {
+  .form-view-grid, .admin-layout { grid-template-columns: 1fr; }
+  .admin-nav { position: static; flex-direction: row; overflow-x: auto; }
+  .admin-nav a.logout { margin-top: 0; margin-left: auto; }
+}
+@media (max-width: 560px) {
+  .toolbar { flex-direction: column; }
+  .toolbar input, .toolbar select { width: 100%; }
+  .page-head h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#/" class="logo">🚗 <span>Формы авто</span></a>
+      <nav>
+        <a href="#/" id="nav-home">Каталог</a>
+        <a href="#/admin" id="nav-admin">Админ-панель</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="container">
+    <div class="empty"><h2>Загрузка…</h2></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Учебный проект · HTML / CSS / JS · localStorage</p>
+    </div>
+  </footer>
+
+<script>
+/* ================= Константы и утилиты ================= */
+const K = {
+  forms: 'cf_forms',
+  cats: 'cf_categories',
+  nextId: 'cf_nextId',
+  admin: 'cf_admin',
+  initialized: 'cf_initialized'
+};
+const ADMIN_DEFAULT = { login: 'admin', password: 'admin123' };
+const PER_PAGE = 6;
+const app = document.getElementById('app');
+
+/* Экранирование — защита от XSS */
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+/* Всплывающие уведомления */
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 2600);
+}
+
+/* Заглушка-картинка: SVG в data-URL */
+function ph(text, color) {
+  color = color || '#2f5bea';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">
+    <rect width="800" height="500" fill="${color}"/>
+    <text x="400" y="260" fill="#fff" font-family="Arial" font-size="52"
+          font-weight="bold" text-anchor="middle">${esc(text)}</text>
+  </svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+/* Дата для записей */
+function now() {
+  return new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+/* Хеширование пароля: SHA-256 с fallback для file:// */
+async function hashPassword(pwd) {
+  try {
+    if (window.crypto && crypto.subtle && crypto.subtle.digest) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) {}
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < pwd.length; i++) {
+    const ch = pwd.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 'fb' + (h2 >>> 0).toString(16) + (h1 >>> 0).toString(16);
+}
+
+/* Чтение файла и валидация изображений */
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+function validateImage(file) {
+  const ok = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!ok.includes(file.type)) return 'Недопустимый формат.';
+  if (file.size > 500 * 1024) return 'Файл больше 500 КБ.';
+  return null;
+}
+
+/* ================= Хранение данных ================= */
+function getForms() {
+  try { return JSON.parse(localStorage.getItem(K.forms) || '[]'); }
+  catch (e) { return []; }
+}
+function setForms(arr) {
+  try { localStorage.setItem(K.forms, JSON.stringify(arr)); }
+  catch (e) {
+    toast('Превышен лимит хранилища. Удалите часть изображений.', 'error');
+    throw e;
+  }
+}
+function getCats() {
+  try { return JSON.parse(localStorage.getItem(K.cats) || '[]'); }
+  catch (e) { return []; }
+}
+function setCats(arr) {
+  try { localStorage.setItem(K.cats, JSON.stringify(arr)); }
+  catch (e) { toast('Ошибка сохранения', 'error'); }
+}
+function nextId() {
+  const n = +(localStorage.getItem(K.nextId) || '1');
+  localStorage.setItem(K.nextId, n + 1);
+  return n;
+}
+
+/* Сессия администратора */
+function isAuthed() { return sessionStorage.getItem(K.admin) === '1'; }
+function requireAuth() {
+  if (!isAuthed()) { location.hash = '#/admin/login'; return false; }
+  return true;
+}
+
+/* ================= Инициализация и демо-данные ================= */
+const SEED = [
+  { title: 'Седан', category: 'Легковые', color: '#2f5bea',
+    short: 'Классический кузов с отдельным багажником',
+    desc: 'Седан — трёхобъёмный кузов с чётко разделёнными моторным отсеком, салоном и багажником. Самый распространённый тип легкового автомобиля.\nПримеры: Toyota Camry, Hyundai Sonata, Lada Vesta' },
+  { title: 'Хэтчбек', category: 'Легковые', color: '#12b76a',
+    short: 'Компактный кузов с багажником внутри салона',
+    desc: 'Хэтчбек — двухобъёмный кузов: салон и багажник объединены, а задняя дверь открывается вместе со стеклом. Компактность и удобная посадка.\nПримеры: Volkswagen Golf, Kia Rio X, Renault Logan' },
+  { title: 'Универсал', category: 'Легковые', color: '#f79009',
+    short: 'Длинный кузов с увеличенным багажником',
+    desc: 'Универсал сохраняет форму седана, но крыша продлена до задней двери, что даёт огромный багажник при сохранении пассажирских мест.\nПримеры: Skoda Octavia Combi, Volvo V60' },
+  { title: 'Купе', category: 'Легковые', color: '#7a5af8',
+    short: 'Двухдверный кузов со спортивным силуэтом',
+    desc: 'Купе — двухдверный кузов с покатой крышей и акцентом на дизайн и динамику. Обычно рассчитан на двух-четырёх человек.\nПримеры: BMW 4 Series, Ford Mustang' },
+  { title: 'Внедорожник (SUV)', category: 'Внедорожники', color: '#d92d20',
+    short: 'Высокий кузов с увеличенным клиренсом',
+    desc: 'SUV (внедорожник) — высокий кузов, увеличенный дорожный просвет и часто полный привод. Хорошая проходимость и вместимость.\nПримеры: Toyota RAV4, Kia Sorento, Lada Niva' },
+  { title: 'Пикап', category: 'Грузовые', color: '#475467',
+    short: 'Кузов с открытой грузовой платформой',
+    desc: 'Пикап сочетает кабину и открытую грузовую платформу. Универсален для перевозки грузов и людей.\nПримеры: Ford F-150, Toyota Hilux, УАЗ Профи' }
+];
+
+async function init() {
+  if (!localStorage.getItem(K.initialized)) {
+    setCats(['Легковые', 'Внедорожники', 'Грузовые']);
+
+    const forms = SEED.map((s, i) => ({
+      id: i + 1,
+      title: s.title,
+      category: s.category,
+      short_description: s.short,
+      description: s.desc,
+      main_image: ph(s.title, s.color),
+      images: [ph(s.title + ' — вид 1', s.color), ph(s.title + ' — вид 2', s.color)],
+      views: Math.floor(Math.random() * 40) + 3,
+      created_at: now(),
+      updated_at: now()
+    }));
+    setForms(forms);
+    localStorage.setItem(K.nextId, forms.length + 1);
+
+    const adminHash = await hashPassword(ADMIN_DEFAULT.password);
+    localStorage.setItem(K.admin, JSON.stringify({ login: ADMIN_DEFAULT.login, hash: adminHash }));
+    localStorage.setItem(K.initialized, '1');
+  }
+  route();
+}
+
+/* ================= Роутер ================= */
+function route() {
+  const hash = location.hash.slice(1) || '/';
+  const parts = hash.split('/').filter(Boolean);
+
+  document.querySelectorAll('.site-header nav a').forEach(a => a.classList.remove('active'));
+  if (parts[0] === 'admin') document.getElementById('nav-admin').classList.add('active');
+  else document.getElementById('nav-home').classList.add('active');
+
+  window.scrollTo(0, 0);
+
+  /* Публичные маршруты */
+  if (parts[0] === 'form' && parts[1]) { renderForm(+parts[1]); return; }
+
+  /* Админка */
+  if (parts[0] === 'admin') {
+    if (parts[1] === 'login') { renderAdminLogin(); return; }
+    if (parts[1] === 'logout') {
+      sessionStorage.removeItem(K.admin);
+      toast('Вы вышли', 'success');
+      location.hash = '#/'; return;
+    }
+    if (!requireAuth()) return;
+
+    if (parts[1] === 'forms') { renderAdminForms(); return; }
+    if (parts[1] === 'categories') { renderAdminCategories(); return; }
+    if (parts[1] === 'form' && parts[2] === 'add') { renderAdminForm(null); return; }
+    if (parts[1] === 'form' && parts[2] === 'edit') { renderAdminForm(+parts[3]); return; }
+    renderAdminDashboard(); return;
+  }
+
+  renderHome();
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('DOMContentLoaded', init);
+
+/* ================= Публичная часть: каталог ================= */
+let state = { q: '', cat: '', page: 1 };
+
+function renderHome() {
+  state = { q: '', cat: '', page: 1 };
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Справочник форм автомобилей</h1>
+      <p>Типы кузова: описание, характеристики, фотографии</p>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="🔍 Поиск по названию…">
+      <select id="catSel"></select>
+    </div>
+    <div id="results"></div>
+  `;
+
+  document.getElementById('catSel').innerHTML =
+    `<option value="">Все категории</option>` +
+    getCats().map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  document.getElementById('q').addEventListener('input', e => {
+    state.q = e.target.value; state.page = 1; renderHomeList();
+  });
+  document.getElementById('catSel').addEventListener('change', e => {
+    state.cat = e.target.value; state.page = 1; renderHomeList();
+  });
+  document.getElementById('results').addEventListener('click', e => {
+    const btn = e.target.closest('[data-page]');
+    if (!btn || btn.disabled) return;
+    state.page = +btn.dataset.page;
+    renderHomeList();
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  renderHomeList();
+}
+
+function renderHomeList() {
+  const q = state.q.trim().toLowerCase();
+  const cat = state.cat;
+
+  const filtered = getForms().filter(f => {
+    const matchQ = !q || (f.title || '').toLowerCase().includes(q);
+    const matchC = !cat || f.category === cat;
+    return matchQ && matchC;
+  }).sort((a, b) => b.id - a.id);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * PER_PAGE;
+  const pageItems = filtered.slice(start, start + PER_PAGE);
+
+  const results = document.getElementById('results');
+  if (!pageItems.length) {
+    results.innerHTML = `<div class="empty">
+      <h2>Ничего не найдено</h2>
+      <p>Попробуйте изменить запрос или категорию.</p>
+    </div>`;
+    return;
+  }
+
+  let html = '<div class="grid">';
+  for (const f of pageItems) {
+    html += `
+      <a class="card" href="#/form/${f.id}">
+        <div class="card-img"><img src="${f.main_image || ph('Нет фото')}" alt="${esc(f.title)}"></div>
+        <div class="card-body">
+          <span class="tag">${esc(f.category)}</span>
+          <h3>${esc(f.title)}</h3>
+          <p>${esc(f.short_description || '')}</p>
+          <div class="card-foot">
+            <span>👁 ${f.views || 0} просмотров</span>
+            <span class="more">Подробнее →</span>
+          </div>
+        </div>
+      </a>`;
+  }
+  html += '</div>' + paginationHtml(totalPages, state.page);
+  results.innerHTML = html;
+}
+
+function paginationHtml(total, current) {
+  if (total <= 1) return '';
+  let html = '<div class="pagination">';
+  html += `<button class="pg" data-page="${current - 1}" ${current === 1 ? 'disabled' : ''}>←</button>`;
+  let last = 0;
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - current) <= 2) {
+      if (i - last > 1) html += '<span class="pg-dots">…</span>';
+      html += `<button class="pg ${i === current ? 'active' : ''}" data-page="${i}">${i}</button>`;
+      last = i;
+    }
+  }
+  html += `<button class="pg" data-page="${current + 1}" ${current === total ? 'disabled' : ''}>→</button>`;
+  return html + '</div>';
+}
+
+/* ================= Страница просмотра ================= */
+function renderForm(id) {
+  const forms = getForms();
+  const idx = forms.findIndex(f => f.id === id);
+
+  if (idx === -1) {
+    app.innerHTML = `<div class="empty">
+      <h2>Запись не найдена</h2>
+      <p style="margin-top:12px"><a href="#/" class="btn">← Вернуться в каталог</a></p>
+    </div>`;
+    return;
+  }
+
+  forms[idx].views = (forms[idx].views || 0) + 1;
+  setForms(forms);
+
+  const f = forms[idx];
+  const images = [f.main_image, ...(f.images || [])].filter(Boolean);
+  const mainSrc = images[0] || ph('Нет фото');
+
+  app.innerHTML = `
+    <a href="#/" class="back-link">← Назад к каталогу</a>
+    <div class="form-view-grid">
+      <div class="gallery">
+        <img id="mainImg" class="main-img" src="${mainSrc}" alt="${esc(f.title)}">
+        <div class="thumbs">
+          ${images.map((src, i) => `
+            <button class="thumb ${i === 0 ? 'active' : ''}" data-src="${src}">
+              <img src="${src}" alt="">
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="form-info">
+        <span class="tag">${esc(f.category)}</span>
+        <h1>${esc(f.title)}</h1>
+        <p class="lead">${esc(f.short_description || '')}</p>
+        <div class="form-stats">
+          <span>👁 ${f.views} просмотров</span>
+          <span>📅 ${esc(f.created_at)}</span>
+        </div>
+        <div class="desc">${esc(f.description || '')}</div>
+      </div>
+    </div>`;
+
+  const thumbs = document.querySelectorAll('.thumb');
+  thumbs.forEach(t => {
+    t.addEventListener('click', () => {
+      document.getElementById('mainImg').src = t.dataset.src;
+      thumbs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+}
+
+/* ================= Авторизация ================= */
+function renderAdminLogin() {
+  app.innerHTML = `
+    <div class="auth-wrap">
+      <form class="auth-card" id="loginForm">
+        <h2>Вход в админ-панель</h2>
+        <p class="hint">По умолчанию: <b>admin</b> / <b>admin123</b></p>
+        <div class="field">
+          <label>Логин</label>
+          <input name="login" required autofocus>
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <input name="password" type="password" required>
+        </div>
+        <button class="btn primary" type="submit">Войти</button>
+        <p class="err" id="err"></p>
+      </form>
+    </div>`;
+
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const login = (fd.get('login') || '').toString().trim();
+    const password = (fd.get('password') || '').toString();
+    const err = document.getElementById('err');
+    err.textContent = '';
+
+    const admin = JSON.parse(localStorage.getItem(K.admin) || 'null');
+    if (!admin) { err.textContent = 'Администратор не настроен.'; return; }
+
+    const hash = await hashPassword(password);
+    if (login === admin.login && hash === admin.hash) {
+      sessionStorage.setItem(K.admin, '1');
+      toast('Добро пожаловать!', 'success');
+      location.hash = '#/admin';
+    } else {
+      err.textContent = 'Неверный логин или пароль';
+    }
+  });
+}
+
+/* ================= Дашборд ================= */
+function adminShell(content, active) {
+  const items = [
+    ['#/admin', 'Дашборд', 'dash'],
+    ['#/admin/forms', 'Записи', 'forms'],
+    ['#/admin/categories', 'Категории', 'cats']
+  ];
+  return `
+    <div class="admin-layout">
+      <aside class="admin-nav">
+        ${items.map(([href, label, key]) =>
+          `<a href="${href}" class="${active === key ? 'active' : ''}">${label}</a>`).join('')}
+        <a href="#/admin/logout" class="logout">Выйти</a>
+      </aside>
+      <div class="admin-content">${content}</div>
+    </div>`;
+}
+
+function renderAdminDashboard() {
+  const forms = getForms();
+  const cats = getCats();
+  const totalViews = forms.reduce((s, f) => s + (f.views || 0), 0);
+  const last = [...forms].sort((a, b) => b.id - a.id).slice(0, 5);
+
+  const lastRows = last.length ? last.map(f => `
+    <tr>
+      <td><img src="${f.main_image || ph('—')}" style="width:60px;border-radius:6px"></td>
+      <td><b>${esc(f.title)}</b></td>
+      <td>${esc(f.category)}</td>
+      <td>${f.views || 0}</td>
+      <td>${esc(f.created_at)}</td>
+    </tr>`).join('') : '<tr><td colspan="5">Пока нет записей</td></tr>';
+
+  const content = `
+    <h1>Дашборд</h1>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="k">Всего форм</div><div class="v">${forms.length}</div></div>
+      <div class="stat-card"><div class="k">Всего просмотров</div><div class="v">${totalViews}</div></div>
+      <div class="stat-card"><div class="k">Категорий</div><div class="v">${cats.length}</div></div>
+    </div>
+    <h2>Последние добавленные</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Просмотры</th><th>Дата</th></tr></thead>
+        <tbody>${lastRows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <a href="#/admin/form/add" class="btn primary">+ Добавить запись</a>
+      <button class="btn danger" id="resetBtn">Сбросить демо-данные</button>
+    </div>`;
+
+  app.innerHTML = adminShell(content, 'dash');
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('Сбросить все данные?')) return;
+    [K.forms, K.cats, K.nextId, K.admin, K.initialized].forEach(key => localStorage.removeItem(key));
+    sessionStorage.removeItem(K.admin);
+    await init();
+    toast('Демо-данные восстановлены', 'success');
+  });
+}
+
+/* ================= Список записей и удаление ================= */
+function renderAdminForms() {
+  const forms = [...getForms()].sort((a, b) => b.id - a.id);
+
+  const rows = forms.length ? forms.map(f => `
+    <tr>
+      <td><img src="${f.main_image || ph('—')}" style="width:60px;border-radius:6px"></td>
+      <td><b>${esc(f.title)}</b></td>
+      <td>${esc(f.category)}</td>
+      <td>${f.views || 0}</td>
+      <td>${esc(f.created_at)}</td>
+      <td>
+        <a href="#/form/${f.id}" class="btn sm">👁</a>
+        <a href="#/admin/form/edit/${f.id}" class="btn sm">✎</a>
+        <button class="btn sm danger" data-del="${f.id}">🗑</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6">Пока нет записей</td></tr>';
+
+  const content = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <h1>Записи (${forms.length})</h1>
+      <a href="#/admin/form/add" class="btn primary">+ Добавить</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Фото</th><th>Название</th><th>Категория</th>
+          <th>Просмотры</th><th>Дата</th><th>Действия</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  app.innerHTML = adminShell(content, 'forms');
+
+  app.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = +btn.dataset.del;
+      const f = getForms().find(x => x.id === id);
+      if (!f) return;
+      if (!confirm(`Удалить запись «${f.title}»?`)) return;
+      setForms(getForms().filter(x => x.id !== id));
+      toast('Запись удалена', 'success');
+      renderAdminForms();
+    });
+  });
+}
+
+/* ================= Форма добавления и редактирования ================= */
+function renderAdminForm(id) {
+  const isEdit = id != null;
+  const existing = isEdit ? getForms().find(f => f.id === id) : null;
+
+  if (isEdit && !existing) {
+    app.innerHTML = adminShell('<div class="empty"><h2>Запись не найдена</h2></div>', 'forms');
+    return;
+  }
+
+  const cats = getCats();
+  if (!cats.length) {
+    app.innerHTML = adminShell(`
+      <h1>${isEdit ? 'Редактирование' : 'Новая запись'}</h1>
+      <div class="empty">
+        <h2>Сначала создайте категорию</h2>
+        <p style="margin-top:12px"><a href="#/admin/categories" class="btn primary">Перейти к категориям</a></p>
+      </div>`, 'forms');
+    return;
+  }
+
+  let mainImage = existing ? existing.main_image : null;
+  let gallery = existing ? [...(existing.images || [])] : [];
+
+  const content = `
+    <h1>${isEdit ? 'Редактирование' : 'Новая запись'}</h1>
+    <form class="form-grid" id="form">
+      <div class="field">
+        <label>Название *</label>
+        <input name="title" required value="${existing ? esc(existing.title) : ''}">
+      </div>
+      <div class="field">
+        <label>Категория *</label>
+        <select name="category" required>
+          ${cats.map(c => `<option value="${esc(c)}"
+            ${existing && existing.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Краткое описание</label>
+        <textarea name="short_description" rows="2">${existing ? esc(existing.short_description || '') : ''}</textarea>
+      </div>
+      <div class="field">
+        <label>Полное описание</label>
+        <textarea name="description" rows="7">${existing ? esc(existing.description || '') : ''}</textarea>
+      </div>
+      <div class="field">
+        <label>Главное изображение</label>
+        <input type="file" name="mainFile" accept="image/jpeg,image/png,image/webp">
+        <div class="main-preview" id="mainPreview"></div>
+      </div>
+      <div class="field">
+        <label>Галерея</label>
+        <input type="file" name="galleryFiles" accept="image/jpeg,image/png,image/webp" multiple>
+        <div class="previews" id="galleryPreview"></div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn primary">${isEdit ? 'Сохранить' : 'Добавить'}</button>
+        <a href="#/admin/forms" class="btn">Отмена</a>
+      </div>
+    </form>`;
+
+  app.innerHTML = adminShell(content, 'forms');
+
+  const mainPreview = document.getElementById('mainPreview');
+  const galleryPreview = document.getElementById('galleryPreview');
+
+  function renderMainPreview() {
+    mainPreview.innerHTML = mainImage
+      ? `<div class="img-prev">
+          <img src="${mainImage}">
+          <button type="button" class="x" data-rm-main>×</button>
+        </div>`
+      : '<p style="color:var(--muted); font-size:13.5px;">Не выбрано</p>';
+    const rm = mainPreview.querySelector('[data-rm-main]');
+    if (rm) rm.onclick = () => { mainImage = null; renderMainPreview(); };
+  }
+
+  function renderGalleryPreview() {
+    galleryPreview.innerHTML = gallery.map((src, i) =>
+      `<div class="img-prev">
+        <img src="${src}">
+        <button type="button" class="x" data-rm-g="${i}">×</button>
+      </div>`
+    ).join('');
+    galleryPreview.querySelectorAll('[data-rm-g]').forEach(btn => {
+      btn.onclick = () => { gallery.splice(+btn.dataset.rmG, 1); renderGalleryPreview(); };
+    });
+  }
+
+  renderMainPreview();
+  renderGalleryPreview();
+
+  document.querySelector('[name="mainFile"]').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const err = validateImage(file);
+    if (err) { toast(err, 'error'); e.target.value = ''; return; }
+    mainImage = await readFileAsDataURL(file);
+    renderMainPreview();
+  });
+
+  document.querySelector('[name="galleryFiles"]').addEventListener('change', async e => {
+    for (const file of [...e.target.files]) {
+      const err = validateImage(file);
+      if (err) { toast(`${file.name}: ${err}`, 'error'); continue; }
+      gallery.push(await readFileAsDataURL(file));
+    }
+    e.target.value = '';
+    renderGalleryPreview();
+  });
+
+  document.getElementById('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = {
+      title: fd.get('title').toString().trim(),
+      category: fd.get('category').toString(),
+      short_description: fd.get('short_description').toString().trim(),
+      description: fd.get('description').toString().trim()
+    };
+    if (!data.title) { toast('Введите название', 'error'); return; }
+
+    const forms = getForms();
+    if (isEdit) {
+      const i = forms.findIndex(f => f.id === id);
+      forms[i] = { ...forms[i], ...data, main_image: mainImage, images: gallery, updated_at: now() };
+    } else {
+      forms.push({
+        id: nextId(),
+        ...data,
+        main_image: mainImage,
+        images: gallery,
+        views: 0,
+        created_at: now(),
+        updated_at: now()
+      });
+    }
+    setForms(forms);
+    toast(isEdit ? 'Сохранено' : 'Добавлено', 'success');
+    location.hash = '#/admin/forms';
+  });
+}
+
+/* ================= Категории ================= */
+function renderAdminCategories() {
+  const cats = getCats();
+  const forms = getForms();
+
+  const rows = cats.length ? cats.map(c => {
+    const count = forms.filter(f => f.category === c).length;
+    return `
+      <div class="cat-row">
+        <span class="name">${esc(c)} <span style="color:var(--muted); font-weight:400;">(${count})</span></span>
+        <span class="cat-actions">
+          <button class="btn sm" data-rename="${esc(c)}">✎ Переименовать</button>
+          <button class="btn sm danger" data-rmcat="${esc(c)}">🗑 Удалить</button>
+        </span>
+      </div>`;
+  }).join('') : '<p style="color:var(--muted)">Категорий пока нет</p>';
+
+  const content = `
+    <h1>Категории</h1>
+    <form class="toolbar" id="addCat" style="max-width:520px;">
+      <input name="name" placeholder="Название категории…" required>
+      <button class="btn primary" type="submit">+ Добавить</button>
+    </form>
+    <div class="cat-list">${rows}</div>`;
+
+  app.innerHTML = adminShell(content, 'cats');
+
+  /* Добавление */
+  document.getElementById('addCat').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = e.target.querySelector('[name="name"]').value.trim();
+    if (!name) return;
+    const cats = getCats();
+    if (cats.includes(name)) { toast('Такая категория уже есть', 'error'); return; }
+    cats.push(name);
+    setCats(cats);
+    toast('Категория добавлена', 'success');
+    renderAdminCategories();
+  });
+
+  /* Переименование с каскадным обновлением записей */
+  app.querySelectorAll('[data-rename]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const oldName = btn.dataset.rename;
+      const newName = prompt('Новое название:', oldName);
+      if (!newName || newName.trim() === oldName) return;
+      const trimmed = newName.trim();
+
+      setCats(getCats().map(c => c === oldName ? trimmed : c));
+      setForms(getForms().map(f => f.category === oldName ? { ...f, category: trimmed } : f));
+      toast('Категория переименована', 'success');
+      renderAdminCategories();
+    });
+  });
+
+  /* Удаление только пустых категорий */
+  app.querySelectorAll('[data-rmcat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.rmcat;
+      const count = getForms().filter(f => f.category === name).length;
+      if (count > 0) {
+        toast(`Нельзя удалить: в категории ${count} записей`, 'error');
+        return;
+      }
+      if (!confirm(`Удалить «${name}»?`)) return;
+      setCats(getCats().filter(c => c !== name));
+      toast('Категория удалена', 'success');
+      renderAdminCategories();
+    });
+  });
+}
+</script>
+</body>
+</html>
